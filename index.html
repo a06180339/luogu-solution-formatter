@@ -73,17 +73,16 @@
 			
 			for (let i = 0; i < mb.length; i++) {
 				let cur = mb[i];
-				cur = cur.replace(/  /g, m => enc('有多余的空格', ' ', m));
-				cur = cur.replace(/<=/g, m => enc('应使用 \\le', '\\le', m));
-				cur = cur.replace(/>=/g, m => enc('应使用 \\ge', '\\ge', m));
-				cur = cur.replace(/(?<!\\)!=/g, m => enc('应使用 \\ne', '\\ne', m));
-				cur = cur.replace(/==/g, m => enc('应使用 =', '=', m));
-				cur = cur.replace(/<-/g, m => enc('应使用 \\gets', '\\gets', m));
-				cur = cur.replace(/->/g, m => enc('应使用 \\to', '\\to', m));
-				cur = cur.replace(/(?<!\\)\*/g, m => enc('公式中应使用 \\times', '\\times', m));
-				cur = cur.replace(/(?<!\\)%/g, m => enc('取模应使用 \\bmod', '\\bmod', m));
-				cur = cur.replace(/(?<!\\)\b(gcd|max|min|log|det)\b/g, (m, p) => enc(`应使用 \\${p}`, `\\${p}`, m));
-				cur = cur.replace(/(?<!\\)\blcm\b/g, m => enc('应使用 \\operatorname{lcm}', '\\operatorname{lcm}', m));
+				cur = cur.replace(/<=/g, m => enc('应使用 \\le', '\\le ', m));
+				cur = cur.replace(/>=/g, m => enc('应使用 \\ge', '\\ge ', m));
+				cur = cur.replace(/(?<!\\)!=/g, m => enc('应使用 \\ne', '\\ne ', m));
+				cur = cur.replace(/==/g, m => enc('应使用 =', '= ', m));
+				cur = cur.replace(/<-/g, m => enc('应使用 \\gets', '\\gets ', m));
+				cur = cur.replace(/->/g, m => enc('应使用 \\to', '\\to ', m));
+				cur = cur.replace(/(?<!\\)\*/g, m => enc('公式中应使用 \\times', '\\times ', m));
+				cur = cur.replace(/(?<!\\)%/g, m => enc('取模应使用 \\bmod', '\\bmod ', m));
+				cur = cur.replace(/(?<!\\)\b(gcd|max|min|log|det)\b/g, (m, p) => enc(`应使用 \\${p}`, `\\${p} `, m));
+				cur = cur.replace(/(?<!\\)\blcm\b/g, m => enc('应使用 \\operatorname{lcm}', '\\operatorname{lcm} ', m));
 				mb[i] = cur;
 			}
 			
