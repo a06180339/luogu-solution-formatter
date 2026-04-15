@@ -1,2 +1,2 @@
 # luogu-solution-formatter
-A tool to check the format.
+这是一个用来检查题解是否符合洛谷格式的工具，支持自动替换半角/全角标点、补齐中英文空格、修正公式不规范写法（如 <=, !=, $gcd$）等。
