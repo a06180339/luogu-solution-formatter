@@ -91,8 +91,8 @@
 			let punc = { ',': '，', '.': '。', '?': '？', '!': '！', ':': '：', ';': '；' };
 			s = s.replace(/([\u4e00-\u9fa5])([,\.\?!:;])(?=[\u4e00-\u9fa5]|\s|\n|$)/g, (m, p1, p2) => p1 + enc('需全角标点', punc[p2], p2));
 			
-			s = s.replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, (m, p1, p2) => enc('中西文间需空格', `${p1} `, p1) + p2);
-			s = s.replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, (m, p1, p2) => p1 + enc('中西文间需空格', ` ${p2}`, p2));
+			s = s.replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, (m, p1, p2) => enc('中英文间需空格', `${p1} `, p1) + p2);
+			s = s.replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, (m, p1, p2) => p1 + enc('中英文间需空格', ` ${p2}`, p2));
 			
 			let blk = '\\[[CM]\\d+\\]';
 			s = s.replace(new RegExp(`([\\u4e00-\\u9fa5])(${blk})`, 'g'), (m, p1, p2) => enc('中文与公式间需空格', `${p1} `, p1) + p2);
@@ -111,10 +111,8 @@
 		function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 		
 		function render(s) {
-			// 将占位符替换为修复后的文本，并套上高亮标签
 			return s.replace(/«(\d+)»/g, (m, id) => {
 				let e = eb[id];
-				// 递归处理 fix 中可能存在的嵌套占位符
 				let finalFix = e.fix;
 				while(finalFix.includes('«')) {
 					finalFix = finalFix.replace(/«(\d+)»/g, (mm, i) => eb[i].fix);
