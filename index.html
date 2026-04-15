@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>洛谷题解格式化工具</title>
+	<style>
+		:root {
+			--bg-color: #f5f7fa;
+			--panel-bg: #ffffff;
+			--border-color: #e2e8f0;
+			--text-color: #2d3748;
+			--primary-color: #2c1e38;
+			--primary-hover: #4a3857;
+			--secondary-bg: #edf2f7;
+			--secondary-hover: #e2e8f0;
+			--error-bg: #ffe5e5;
+			--error-color: #e53e3e;
+			--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			--code-font: 'Consolas', 'Monaco', 'Courier New', monospace;
+		}
+		
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+		
+		body {
+			background-color: var(--bg-color);
+			color: var(--text-color);
+			font-family: var(--font-family);
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			overflow: hidden;
+		}
+		
+		header {
+			padding: 15px 24px;
+			background: var(--panel-bg);
+			border-bottom: 1px solid var(--border-color);
+			font-size: 1.25rem;
+			font-weight: 600;
+			display: flex;
+			align-items: center;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+			z-index: 10;
+		}
+		
+		header span {
+			color: #718096;
+			font-size: 0.95rem;
+			margin-left: 12px;
+			font-weight: 400;
+		}
+		
+		.container {
+			display: flex;
+			flex: 1;
+			padding: 20px;
+			gap: 20px;
+			overflow: hidden;
+		}
+		
+		.panel {
+			flex: 1;
+			background: var(--panel-bg);
+			border: 1px solid var(--border-color);
+			border-radius: 8px;
+			display: flex;
+			flex-direction: column;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+			overflow: hidden;
+		}
+		
+		textarea, .output {
+			flex: 1;
+			width: 100%;
+			border: none;
+			padding: 20px;
+			font-size: 14px;
+			font-family: var(--code-font);
+			line-height: 1.6;
+			resize: none;
+			outline: none;
+			white-space: pre-wrap;
+			word-wrap: break-word;
+			color: #4a5568;
+		}
+		
+		textarea {
+			overflow-y: auto;
+		}
+		
+		.output {
+			background-color: #fafbfc;
+			overflow-y: hidden; 
+		}
+		
+		.error-highlight {
+			background-color: var(--error-bg);
+			color: var(--error-color);
+			border-bottom: 2px solid var(--error-color);
+			border-radius: 2px;
+			padding: 0 2px;
+			cursor: help;
+		}
+		
+		.global-tooltip {
+			position: fixed;
+			background: #2d3748;
+			color: #ffffff;
+			padding: 6px 12px;
+			border-radius: 4px;
+			font-size: 12px;
+			font-family: var(--font-family);
+			white-space: nowrap;
+			z-index: 9999;
+			pointer-events: none;
+			transform: translate(-50%, -100%);
+			opacity: 0;
+			visibility: hidden;
+			transition: opacity 0.15s ease, visibility 0.15s ease;
+			box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+		}
+		
+		.global-tooltip::after {
+			content: '';
+			position: absolute;
+			top: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			border: 6px solid transparent;
+			border-top-color: #2d3748;
+		}
+		
+		.global-tooltip.show {
+			opacity: 1;
+			visibility: visible;
+		}
+		
+		.controls {
+			padding: 16px 24px;
+			background: var(--panel-bg);
+			border-top: 1px solid var(--border-color);
+			display: flex;
+			gap: 12px;
+			box-shadow: 0 -1px 3px rgba(0,0,0,0.03);
+			z-index: 10;
+		}
+		
+		button {
+			background: var(--primary-color);
+			color: #fff;
+			border: none;
+			padding: 10px 24px;
+			border-radius: 6px;
+			font-size: 14px;
+			cursor: pointer;
+			font-weight: 500;
+			transition: all 0.2s;
+		}
+		
+		button:hover {
+			background: var(--primary-hover);
+		}
+		
+		.btn-secondary {
+			background: var(--secondary-bg);
+			color: var(--text-color);
+		}
+		
+		.btn-secondary:hover {
+			background: var(--secondary-hover);
+		}
+	</style>
+</head>
+<body>
+	<header>
+		洛谷题解格式化工具 <span>| Made by a06180339 and gemini</span>
+	</header>
+	
+	<div class="container">
+		<div class="panel">
+			<textarea id="input" spellcheck="false" placeholder="在此处粘贴你的 Markdown 题解内容..."></textarea>
+		</div>
+		<div class="panel">
+			<div id="output" class="output"></div>
+		</div>
+	</div>
+	
+	<div class="controls">
+		<button onclick="check()" class="btn-secondary">查错</button>
+		<button id="btn-copy" onclick="checkCopy()">查错并复制</button>
+	</div>
+
+	<script>
+		function enc(msg, fix, orig) {
+			let m = btoa(encodeURIComponent(msg)),
+			    f = btoa(encodeURIComponent(fix)),
+			    o = btoa(encodeURIComponent(orig));
+			return `__ERR_${m}_${f}_${o}__`;
+		}
+		
+		function solve(s) {
+			let cb = [], mb = [];
+			
+			s = s.replace(/```[\s\S]*?```/g, m => {
+				cb.push(m);
+				return `__CODE_${cb.length - 1}__`;
+			});
+			
+			s = s.replace(/`[^`\n]+`/g, m => {
+				cb.push(m);
+				return `__CODE_${cb.length - 1}__`;
+			});
+			
+			s = s.replace(/\$\$[\s\S]*?\$\$/g, m => {
+				mb.push(m);
+				return `__MATH_${mb.length - 1}__`;
+			});
+			
+			s = s.replace(/\$[^$\n]+\$/g, m => {
+				mb.push(m);
+				return `__MATH_${mb.length - 1}__`;
+			});
+			
+			for (let i = 0; i < mb.length; i++) {
+				let cur = mb[i];
+				cur = cur.replace(/<=/g, m => enc('应使用 \\le', '\\le', m));
+				cur = cur.replace(/>=/g, m => enc('应使用 \\ge', '\\ge', m));
+				cur = cur.replace(/(?<!\\)!=/g, m => enc('应使用 \\ne', '\\ne', m));
+				cur = cur.replace(/==/g, m => enc('应使用 =', '=', m));
+				cur = cur.replace(/<-/g, m => enc('应使用 \\gets', '\\gets', m));
+				cur = cur.replace(/->/g, m => enc('应使用 \\to', '\\to', m));
+				cur = cur.replace(/(?<!\\)\*/g, m => enc('数学公式中推荐使用 \\times', '\\times', m));
+				cur = cur.replace(/(?<!\\)%/g, m => enc('取模应使用 \\bmod', '\\bmod', m));
+				cur = cur.replace(/(?<!\\)\bmod\b/g, m => enc('应使用 \\bmod', '\\bmod', m));
+				cur = cur.replace(/(?<!\\)\b(gcd|max|min|log|det)\b/g, (m, p) => enc(`应使用 \\${p}`, `\\${p}`, m));
+				cur = cur.replace(/(?<!\\)\blcm\b/g, m => enc('应使用 \\operatorname{lcm}', '\\operatorname{lcm}', m));
+				mb[i] = cur;
+			}
+			
+			s = s.replace(/(^|\n)(#{1,6})([^#\s\n].*)/g, (m, p1, p2, p3) => {
+				return p1 + enc('标题符号后需要加空格', `${p2} ${p3}`, `${p2}${p3}`);
+			});
+			
+			let punc = { ',': '，', '.': '。', '?': '？', '!': '！', ':': '：', ';': '；' };
+			
+			s = s.replace(/([\u4e00-\u9fa5])([,\.\?!:;])(?=[\u4e00-\u9fa5]|\s|\n|$)/g, (m, p1, p2) => {
+				return p1 + enc('中文语境应使用全角标点符号', punc[p2], p2);
+			});
+			
+			s = s.replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, (m, p1, p2) => {
+				return enc('中文与英文、数字之间需要半角空格', `${p1} `, p1) + p2;
+			});
+			
+			s = s.replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, (m, p1, p2) => {
+				return p1 + enc('中文与英文、数字之间需要半角空格', ` ${p2}`, p2);
+			});
+			
+			let blk = '__(MATH|CODE)_\\d+__';
+			
+			s = s.replace(new RegExp(`([\\u4e00-\\u9fa5])(${blk})`, 'g'), (m, p1, p2) => {
+				return enc('中文与公式/代码之间需要半角空格', `${p1} `, p1) + p2;
+			});
+			
+			s = s.replace(new RegExp(`(${blk})([\\u4e00-\\u9fa5])`, 'g'), (m, p1, p2, p3) => {
+				return p1 + enc('公式/代码与中文之间需要半角空格', ` ${p3}`, p3);
+			});
+			
+			let cn = '[，。！？：；、（）【】《》]';
+			
+			s = s.replace(new RegExp(`(${cn})[ \\t]+([a-zA-Z0-9]|${blk})`, 'g'), (m, p1, p2) => {
+				return enc('中文标点符号与英文/公式之间不应有空格', p1, m.substring(0, m.length - p2.length)) + p2;
+			});
+			
+			s = s.replace(new RegExp(`([a-zA-Z0-9]|${blk})[ \\t]+(${cn})`, 'g'), (m, p1, p2, p3) => {
+				return p1 + enc('英文/公式与中文标点符号之间不应有空格', p3, m.substring(p1.length));
+			});
+			
+			s = s.replace(/__MATH_(\d+)__/g, (m, id) => mb[id]);
+			s = s.replace(/__CODE_(\d+)__/g, (m, id) => cb[id]);
+			
+			return s;
+		}
+		
+		function esc(s) {
+			return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		}
+		
+		function render(s) {
+			let rgx = /__ERR_([A-Za-z0-9+/=]+)_([A-Za-z0-9+/=]+)_([A-Za-z0-9+/=]+)__/g;
+			
+			return s.replace(rgx, (m, msg, fix, orig) => {
+				try {
+					let d_msg = decodeURIComponent(atob(msg)), d_orig = decodeURIComponent(atob(orig));
+					return `<span class="error-highlight" data-msg="${d_msg}">${esc(d_orig)}</span>`;
+				} catch (e) {
+					return m; 
+				}
+			});
+		}
+		
+		function getFix(s) {
+			let rgx = /__ERR_([A-Za-z0-9+/=]+)_([A-Za-z0-9+/=]+)_([A-Za-z0-9+/=]+)__/g;
+			
+			return s.replace(rgx, (m, msg, fix, orig) => {
+				try {
+					return decodeURIComponent(atob(fix));
+				} catch (e) {
+					return m;
+				}
+			});
+		}
+		
+		function check() {
+			let in_el = document.getElementById('input');
+			let res = solve(in_el.value);
+			document.getElementById('output').innerHTML = render(esc(res));
+			in_el.dispatchEvent(new Event('scroll'));
+			return res;
+		}
+		
+		function checkCopy() {
+			let res = check(), fix = getFix(res);
+			
+			navigator.clipboard.writeText(fix).then(() => {
+				let btn = document.getElementById('btn-copy');
+				let cur = btn.innerText;
+				btn.innerText = '修复且已复制！';
+				setTimeout(() => { btn.innerText = cur; }, 2000);
+			}).catch(err => {
+				alert('剪贴板复制失败，请重试或手动复制右侧内容。');
+			});
+		}
+		
+		let in_el = document.getElementById('input');
+		let out_el = document.getElementById('output');
+		let tt = document.createElement('div');
+		tt.className = 'global-tooltip';
+		document.body.appendChild(tt);
+		
+		out_el.addEventListener('mouseover', (e) => {
+			if (e.target.classList.contains('error-highlight')) {
+				let msg = e.target.getAttribute('data-msg');
+				tt.textContent = msg;
+				let rect = e.target.getBoundingClientRect();
+				tt.style.left = (rect.left + rect.width / 2) + 'px';
+				tt.style.top = (rect.top - 8) + 'px';
+				tt.classList.add('show');
+			}
+		});
+		
+		out_el.addEventListener('mouseout', (e) => {
+			if (e.target.classList.contains('error-highlight'))
+				tt.classList.remove('show');
+		});
+		
+		in_el.addEventListener('scroll', () => {
+			let mx_in = in_el.scrollHeight - in_el.clientHeight;
+			
+			if (mx_in > 0) {
+				let pct = in_el.scrollTop / mx_in;
+				let mx_out = out_el.scrollHeight - out_el.clientHeight;
+				out_el.scrollTop = pct * mx_out;
+			}
+			
+			tt.classList.remove('show');
+		});
+		
+		document.addEventListener('DOMContentLoaded', () => {
+			let smp = `# 洛谷题解示例\n这就是我的第一行解法。\n$O(n)$ 的时间复杂度。\n\n这是一篇洛谷题解,我们将演示格式化工具的效果.\n我们发现dp数组是可以优化的！并且当$x<=10$时，可以有$O(n)$的解法.\n如果$a!=b$，我们令$a<-b$，并且计算$123%k$。\n时间复杂度为$O(n*m)$。\n此时代码如\`ans=1\`。\n中文$x$中文，中文与英文English之间应该有空格。\n中文标点符号后不应有空格： ， $a=1$。\n调用gcd函数：$gcd(a,b)$\n多行公式：\n$$\na == b -> c\n$$`;
+			in_el.value = smp;
+			check();
+		});
+	</script>
+</body>
+</html>
